@@ -1,0 +1,32 @@
+# Apply only behind a configured HTTPS reverse proxy.
+services:
+  db:
+    ports: !reset []
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:?Set the production database name}
+      POSTGRES_USER: ${DATABASE_USER:?Set the production database user}
+  backend:
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/${DATABASE_NAME:?Set the production database name}
+      DATABASE_USER: ${DATABASE_USER:?Set the production database user}
+      SPRING_PROFILES_ACTIVE: prod
+      COOKIE_SECURE: "true"
+      APP_ORIGIN: ${APP_ORIGIN:?Set the production HTTPS origin}
+  frontend:
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
