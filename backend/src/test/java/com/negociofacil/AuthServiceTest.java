@@ -19,7 +19,8 @@ class AuthServiceTest {
     when(users.existsByEmail("user@example.com")).thenReturn(true);
     var service =
         new AuthService(
-            users, companies, encoder, mock(org.springframework.jdbc.core.JdbcTemplate.class));
+            users, companies, encoder, mock(org.springframework.jdbc.core.JdbcTemplate.class),
+            mock(com.negociofacil.finance.FinanceBootstrap.class));
     assertThatThrownBy(
             () ->
                 service.register(

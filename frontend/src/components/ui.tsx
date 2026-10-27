@@ -153,10 +153,12 @@ export function Modal({
   title,
   children,
   onClose,
+  busy = false,
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  busy?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -166,13 +168,16 @@ export function Modal({
   return (
     <dialog
       ref={ref}
-      onCancel={onClose}
+      onCancel={(event) => {
+        if (busy) event.preventDefault();
+        else onClose();
+      }}
       aria-labelledby="modal-title"
       className="modal"
     >
       <div className="modal-head">
         <h2 id="modal-title">{title}</h2>
-        <button className="icon-btn" aria-label="Fechar" onClick={onClose}>
+        <button className="icon-btn" aria-label="Fechar" onClick={onClose} disabled={busy}>
           <X size={20} />
         </button>
       </div>
@@ -196,7 +201,7 @@ export function Confirm({
   danger?: boolean;
 }) {
   return (
-    <Modal title={title} onClose={onClose}>
+    <Modal title={title} onClose={onClose} busy={busy}>
       <p className="muted">{description}</p>
       <div className="actions mt-6">
         <button className="btn secondary" onClick={onClose} disabled={busy}>

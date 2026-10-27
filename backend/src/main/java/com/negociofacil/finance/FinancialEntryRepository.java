@@ -1,0 +1,9 @@
+package com.negociofacil.finance;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface FinancialEntryRepository extends JpaRepository<FinancialEntry, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<FinancialEntry> {
+  java.util.Optional<FinancialEntry> findByIdAndCompanyId(Long id, Long companyId);
+  java.util.Optional<FinancialEntry> findByCompanyIdAndRequestId(Long companyId, java.util.UUID requestId);
+  boolean existsByCompanyIdAndAccountIdAndStatus(Long companyId, Long accountId, FinanceTypes.Status status);
+}

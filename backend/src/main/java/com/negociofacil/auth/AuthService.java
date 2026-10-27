@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
+  private final com.negociofacil.finance.FinanceBootstrap finance;
   private final UserRepository users;
   private final CompanyRepository companies;
   private final PasswordEncoder passwords;
@@ -21,7 +22,9 @@ public class AuthService {
       UserRepository users,
       CompanyRepository companies,
       PasswordEncoder passwords,
-      org.springframework.jdbc.core.JdbcTemplate jdbc) {
+      org.springframework.jdbc.core.JdbcTemplate jdbc,
+      com.negociofacil.finance.FinanceBootstrap finance) {
+    this.finance = finance;
     this.jdbc = jdbc;
     this.users = users;
     this.companies = companies;
@@ -54,6 +57,7 @@ public class AuthService {
     user.email = email;
     user.passwordHash = passwords.encode(input.password());
     users.save(user);
+    finance.initializeCompany(company.id);
     return view(user, company);
   }
 

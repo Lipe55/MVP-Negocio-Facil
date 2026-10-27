@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Cloud-local toolchain prepared during onboarding; regular machines can use mvn.
+export JAVA_HOME=/workspace/tools/jdk-21
+if [ -x /workspace/tools/jdk-21-lts/bin/javac ]; then export JAVA_HOME=/workspace/tools/jdk-21-lts; fi
+export MAVEN_OPTS="${MAVEN_OPTS:-} -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts"
+exec /workspace/tools/apache-maven-3.9.11/bin/mvn -s /workspace/tools/maven-settings.xml -Dmaven.repo.local=/workspace/.m2 "$@"

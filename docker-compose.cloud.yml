@@ -1,0 +1,21 @@
+# Optional build-time proxy trust for the isolated Codex cloud environment.
+# No secret is copied to an image layer. Ordinary development uses the main file.
+services:
+  backend:
+    build:
+      network: host
+      secrets:
+        - maven_settings
+        - java_cacerts
+  frontend:
+    build:
+      network: host
+      secrets:
+        - cloud_ca
+secrets:
+  maven_settings:
+    file: /workspace/tools/maven-settings-docker.xml
+  java_cacerts:
+    file: /etc/ssl/certs/java/cacerts
+  cloud_ca:
+    file: ${NODE_EXTRA_CA_CERTS:?The cloud CA path must be present}

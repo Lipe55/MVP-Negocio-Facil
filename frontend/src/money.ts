@@ -25,10 +25,12 @@ export function totals(
   return { subtotal, discount: discountCents, total: subtotal - discountCents };
 }
 export function decimal(cents: bigint): string {
-  return `${cents / 100n}.${(cents % 100n).toString().padStart(2, "0")}`;
+  const abs = cents < 0n ? -cents : cents;
+  return `${cents < 0n ? "-" : ""}${abs / 100n}.${(abs % 100n).toString().padStart(2, "0")}`;
 }
 export function money(value: string | bigint): string {
-  const cents = typeof value === "bigint" ? value : scaled(value, 2);
+  const cents = typeof value === "bigint" ? value
+    : value.startsWith("-") ? -scaled(value.slice(1), 2) : scaled(value, 2);
   const abs = cents < 0n ? -cents : cents;
   return `${cents < 0n ? "-" : ""}R$ ${(abs / 100n).toLocaleString("pt-BR")},${(abs % 100n).toString().padStart(2, "0")}`;
 }
