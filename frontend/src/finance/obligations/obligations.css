@@ -1,0 +1,48 @@
+.finance-obligations { min-width:0; }
+.obligation-toolbar { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:18px; }
+.obligation-toolbar .finance-note { margin:0; max-width:800px; }
+.obligation-toolbar > button { flex-shrink:0; }
+.obligation-filters { display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr 1fr 1fr; gap:12px; margin-bottom:20px; }
+.obligation-filters .field { margin:0; min-width:0; }
+.obligation-table { min-width:1080px; }
+.obligation-table .row-actions { flex-wrap:wrap; max-width:190px; gap:3px; }
+.obligation-table td,.obligation-table th { vertical-align:top; }
+.obligation-overdue { color:var(--danger); font-weight:600; }
+.obligation-row-recurrence { margin-top:6px; font-size:11px; max-width:210px; }
+.obligation-row-recurrence summary { display:flex; align-items:center; gap:5px; color:var(--primary); cursor:pointer; font-weight:600; padding:4px 0; }
+.obligation-row-recurrence > div { display:grid; gap:9px; padding-top:8px; }
+.obligation-row-recurrence button { text-align:left; font-size:11px; }
+.obligation-danger-link { color:var(--danger); }
+.obligation-form input[type='checkbox'],.obligation-checkbox input { width:16px; height:16px; padding:0; margin:2px 0 0; flex-shrink:0; accent-color:var(--primary); }
+.obligation-checkbox { display:flex; align-items:flex-start; gap:9px; margin:18px 0; color:var(--text); font-size:13px; cursor:pointer; }
+.obligation-preview { padding:12px 14px; border:1px solid var(--border); border-radius:10px; background:var(--primary-soft); color:var(--primary); font-size:13px; margin:14px 0; }
+.modal:has(.obligation-details) { width:min(1180px,calc(100vw - 32px)); max-width:1180px; }
+.modal:has(.obligation-payment-history) { width:min(760px,calc(100vw - 32px)); max-width:760px; }
+.obligation-details { min-width:0; }
+.obligation-details > .actions { margin-top:20px; }
+.obligation-payment-history > .muted { font-size:12px; margin-top:5px; }
+.obligation-totals { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; padding:14px 0; margin:14px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+.obligation-totals span { display:grid; gap:6px; color:var(--muted); font-size:11px; }
+.obligation-totals strong { font-size:17px; color:var(--text); overflow-wrap:anywhere; }
+.obligation-payment-list { list-style:none; margin:16px 0; padding:0; display:grid; gap:12px; }
+.obligation-payment-list > li { padding:14px; border:1px solid var(--border); border-radius:12px; background:var(--surface-alt); }
+.obligation-payment-list > li > div { display:flex; justify-content:space-between; gap:12px; align-items:center; }
+.obligation-payment-list > li > div > span { font-size:12px; color:var(--muted); }
+.obligation-payment-list > li > p { font-size:11px; margin:5px 0; }
+.obligation-payment-list button { margin-top:7px; }
+.obligation-reversed { color:var(--muted); }
+.obligation-reversal { padding:16px; border:1px solid var(--warning); border-radius:12px; background:var(--warning-soft); margin:18px 0; }
+.obligation-reversal h3 { color:var(--text); margin-bottom:6px; }
+.obligation-reversal > p,.obligation-reversal-note { font-size:12px; color:var(--muted); line-height:1.65; }
+.obligation-reversal .field { margin-top:14px; }
+.obligation-reversal > .actions { margin-top:12px; }
+@media(max-width:1150px) { .obligation-filters { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:650px) {
+ .obligation-filters { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 9px; }
+ .obligation-filters .field:first-child { grid-column:1/-1; }
+ .obligation-toolbar { flex-direction:column; gap:12px; }
+ .obligation-totals { gap:10px; }
+ .obligation-totals strong { font-size:14px; }
+ .obligation-totals span { font-size:10px; }
+ .modal:has(.obligation-details),.modal:has(.obligation-payment-history) { width:calc(100vw - 20px); }
+}

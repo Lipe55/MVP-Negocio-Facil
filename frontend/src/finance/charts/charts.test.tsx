@@ -126,7 +126,7 @@ describe('chart builder', () => {
 describe('saved chart panel', () => {
   it('shows an empty state and preserves the exact financial tab order', async () => {
     setup(<Charts />); expect(await screen.findByText('Você ainda não criou nenhum gráfico.')).toBeInTheDocument();
-    expect(within(screen.getByRole('navigation', { name: 'Seções do financeiro' })).getAllByRole('link').map(link => link.textContent)).toEqual(['Movimentações', 'Gráficos', 'Contas e saldos']);
+    expect(within(screen.getByRole('navigation', { name: 'Seções do financeiro' })).getAllByRole('link').map(link => link.textContent)).toEqual(['Movimentações', 'Gráficos', 'Contas e saldos', 'Contas a receber', 'Contas a pagar']);
     expect(screen.getByRole('button', { name: 'Criar meu primeiro gráfico' })).toBeEnabled();
   });
   it('duplicates to a distinct saved chart and opens its editor', async () => {

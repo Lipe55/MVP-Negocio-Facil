@@ -19,12 +19,19 @@ public final class FinanceDtos {
       @NotBlank @Size(max=500) String description,
       @NotNull @DecimalMin(value="0", inclusive=false) @Digits(integer=14, fraction=2) BigDecimal amount,
       @NotNull Boolean settled, LocalDate entryDate, LocalDate settlementDate,
-      @Size(max=3000) String notes, Long version) {}
+      @Size(max=3000) String notes, Long version, LocalDate dueDate) {}
   public record EntryView(Long id, Kind kind, Status status, Long accountId, String accountName,
       Long categoryId, String categoryName, String description, BigDecimal amount,
-      LocalDate entryDate, LocalDate settlementDate, String notes, long version, Instant createdAt) {}
+      LocalDate entryDate, LocalDate settlementDate, String notes, long version, Instant createdAt,
+      Long obligationId,Integer installmentNumber,Integer installmentCount,LocalDate dueDate,
+      BigDecimal paidAmount,BigDecimal remainingAmount,PaymentStatus paymentStatus,boolean overdue,
+      Long recurrenceId,Integer occurrenceNumber,boolean managed,boolean hasSettlementHistory) {}
   public record SettlementInput(@NotNull UUID requestId, @NotNull @PositiveOrZero Long version,
-      @NotNull LocalDate settlementDate) {}
+      @NotNull LocalDate settlementDate,
+      @DecimalMin(value="0",inclusive=false) @Digits(integer=14,fraction=2) BigDecimal amount) {}
+  public record SettlementView(Long id,BigDecimal amount,LocalDate settlementDate,Instant reversedAt,Instant createdAt) {}
+  public record ReverseSettlementInput(@NotNull @PositiveOrZero Long version,
+      @NotBlank @Size(max=300) String reason) {}
   public record VersionInput(@NotNull @PositiveOrZero Long version) {}
   public record TransferInput(@NotNull UUID requestId, @NotNull Long sourceAccountId,
       @NotNull Long targetAccountId,

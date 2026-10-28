@@ -69,7 +69,7 @@ test('custom charts use real cash, persist, refresh, isolate and work on mobile'
   await page.goto('/financeiro/graficos');
   await expect(page.getByRole('heading', { name: 'Meus gráficos', exact: true })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Seções do financeiro' }).getByRole('link'))
-    .toHaveText(['Movimentações', 'Gráficos', 'Contas e saldos']);
+    .toHaveText(['Movimentações', 'Gráficos', 'Contas e saldos', 'Contas a receber', 'Contas a pagar']);
   await expect(page.getByRole('article')).toHaveCount(5);
   await page.getByRole('button', { name: 'Adicionar gráfico', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Adicionar gráfico', exact: true });

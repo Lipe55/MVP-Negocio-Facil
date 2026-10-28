@@ -116,9 +116,9 @@ public class ChartService {
     available.add(new ChartDtos.MetricOption("SALDO_DISPONIVEL",label(Metric.SALDO_DISPONIVEL),"Posição de saldo no fim de cada intervalo, incluindo abertura, retiradas e transferências.",true,null,true));
     available.add(new ChartDtos.MetricOption("RETIRADAS_PESSOAIS",label(Metric.RETIRADAS_PESSOAIS),"Dinheiro retirado pelo proprietário, separado das despesas operacionais.",true,null,false));
     var unavailable=List.of(
-        new String[]{"CONTAS_A_RECEBER","Contas a receber","Comparação por vencimento depende do módulo de obrigações e vencimentos."},
-        new String[]{"CONTAS_A_PAGAR","Contas a pagar","Comparação por vencimento depende do módulo de obrigações e vencimentos."},
-        new String[]{"CONTAS_VENCIDAS","Contas vencidas","Os lançamentos atuais não possuem data de vencimento."},
+        new String[]{"CONTAS_A_RECEBER","Contas a receber","Esta visualização ainda não está disponível no construtor. Consulte a tela Contas a receber."},
+        new String[]{"CONTAS_A_PAGAR","Contas a pagar","Esta visualização ainda não está disponível no construtor. Consulte a tela Contas a pagar."},
+        new String[]{"CONTAS_VENCIDAS","Contas vencidas","O gráfico de vencimentos ainda não está disponível. Use o filtro Vencidas nas telas de contas."},
         new String[]{"CUSTOS_DIRETOS","Custos diretos dos serviços","Lançamentos ainda não têm vínculo com serviços."},
         new String[]{"MARGEM_CONTRIBUICAO","Margem de contribuição por serviço","Depende da integração financeira com serviços."},
         new String[]{"TAXAS_CARTAO","Taxas de cartão","O módulo de cartões ainda não foi implementado."},

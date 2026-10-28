@@ -28,8 +28,12 @@ usa SVG/React, sem nova dependência. O Git estava limpo no início desta entreg
 | Retiradas pessoais | Saídas pessoais, separadas das despesas operacionais |
 | Saldo disponível | Referências de saldo inicial e todos os movimentos efetivos, incluindo transferências e retiradas |
 
-Não há datas de vencimento no modelo atual. Contas a pagar/receber por vencimento
-e valores vencidos ficam indisponíveis, mesmo existindo lançamentos pendentes.
+Na entrega original dos gráficos não havia datas de vencimento. A Entrega 2
+financeira acrescenta obrigações/vencimentos e liquidações parciais, mas não
+acrescenta métricas novas ao construtor. Contas a pagar/receber por vencimento e
+valores vencidos continuam indisponíveis como gráficos; consulte as telas de
+contas e seus filtros. Receitas/despesas gráficas consideram os recebimentos e
+pagamentos efetivos, inclusive os valores parcialmente liquidados.
 Clientes existem no sistema, mas não estão associados aos lançamentos
 financeiros. Serviços, custos/margens por serviço, cartões e subcategorias também
 não estão disponíveis. O construtor apresenta as razões, sem inventar vínculos,
@@ -171,8 +175,10 @@ O teste é ignorado por padrão fora do runner para evitar gravar no banco em us
   não há captura visual aprovada nesta entrega.
 - Não houve deploy, reinício dos serviços existentes ou aplicação de V4 ao banco
   de trabalho. Fontes modificados não atualizam imagens Docker já iniciadas.
-- Clientes/serviços/subcategorias, vencimentos e cartões permanecem indisponíveis
-  pelos limites do modelo atual. O catálogo e a interface explicam os motivos.
+- Clientes/serviços/subcategorias e cartões permanecem indisponíveis pelos
+  limites do modelo atual. Gráficos de obrigações/vencimentos ainda não foram
+  implementados; a Entrega 2 oferece suas consultas em telas próprias. O catálogo
+  e a interface explicam os motivos.
 - Atualização automática dos dados a cada minuto com a aba ativa, ao atualizar
   explicitamente e por invalidação após operações no financeiro; não há canal
   em tempo real entre sessões diferentes.

@@ -22,6 +22,7 @@ docs/               Decisões, segurança e relatório de validação
 - Compartilhamento pelo WhatsApp via `wa.me`, dashboard atualizado e configurações da empresa.
 - Temas claro e escuro com alternância no topo, preferência salva no navegador e tema inicial do sistema.
 - Financeiro com contas, movimentações e painel de gráficos personalizáveis por usuário. Consulte [a documentação dos gráficos](docs/GRAFICOS_FINANCEIROS.md) para métricas suportadas e validação.
+- Contas a pagar e receber com vencimentos, pagamentos parciais, parcelamento e despesas mensais recorrentes finitas. Consulte [a Entrega 2 financeira](docs/FINANCEIRO_ENTREGA_2.md).
 - Interface em português, layout responsivo, estados vazios, carregamento, erros e diálogos nativos acessíveis por teclado.
 
 ## Execução com Docker

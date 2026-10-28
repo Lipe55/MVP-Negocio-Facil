@@ -32,6 +32,9 @@ public class FinanceController {
   public FinanceDtos.EntryView createEntry(@Valid @RequestBody FinanceDtos.EntryInput input) { return service.createEntry(input); }
   @PutMapping("/entries/{id}") public FinanceDtos.EntryView updateEntry(@PathVariable Long id,@Valid @RequestBody FinanceDtos.EntryInput input) { return service.updateEntry(id,input); }
   @PostMapping("/entries/{id}/settle") public FinanceDtos.EntryView settle(@PathVariable Long id,@Valid @RequestBody FinanceDtos.SettlementInput input) { return service.settleEntry(id,input); }
+  @GetMapping("/entries/{id}/settlements") public List<FinanceDtos.SettlementView> settlements(@PathVariable Long id) { return service.settlements(id); }
+  @PostMapping("/entries/{id}/settlements/{settlementId}/reverse") public FinanceDtos.EntryView reverseSettlement(@PathVariable Long id,@PathVariable Long settlementId,
+      @Valid @RequestBody FinanceDtos.ReverseSettlementInput input) { return service.reverseSettlement(id,settlementId,input); }
   @PostMapping("/entries/{id}/cancel") public FinanceDtos.EntryView cancel(@PathVariable Long id,@Valid @RequestBody FinanceDtos.VersionInput input) { return service.cancelEntry(id,input); }
   @PostMapping("/transfers") @ResponseStatus(HttpStatus.CREATED)
   public FinanceDtos.TransferView transfer(@Valid @RequestBody FinanceDtos.TransferInput input) { return service.transfer(input); }

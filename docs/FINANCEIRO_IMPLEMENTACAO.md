@@ -7,7 +7,7 @@ Controle de caixa para MEIs, integrado à autenticação e ao isolamento por emp
 | Entrega | Escopo | Estado |
 |---|---|---|
 | 1 | Fundação: contas, categorias, lançamentos, liquidação integral, saldo, extrato, histórico, transferências e retiradas | AGUARDANDO TESTES DO USUÁRIO |
-| 2 | Contas a pagar/receber, parciais, parcelas e recorrências | NÃO INICIADA |
+| 2 | Contas a pagar/receber, parciais, parcelas e recorrências | AGUARDANDO TESTES DO USUÁRIO |
 | 3 | Integração com orçamentos e serviços | NÃO INICIADA |
 | 4 | Dashboard e projeções | NÃO INICIADA |
 | 5 | Cartões e relatórios | NÃO INICIADA |
@@ -170,11 +170,19 @@ Use uma empresa de teste no ambiente de desenvolvimento, com backend e frontend 
 
 `AuthService` e seu teste foram ajustados somente para criar a estrutura financeira no cadastro transacional. Rotas/menu/estilos integram as duas telas ao app existente; o helper monetário passou a exibir saldos negativos corretamente; o diálogo compartilhado ganhou bloqueio opcional durante gravações. As diferenças de permissão nos dois scripts antigos e os demais arquivos locais anteriores foram preservados.
 
-## Status e próxima autorização
+## Registro histórico — encerramento da Entrega 1
 
 Entrega 1: **AGUARDANDO TESTES DO USUÁRIO**. Não aprovada automaticamente. Sugestão de commit: `feat(finance): implementar fundação financeira`.
 
 Próxima entrega autorizável: Entrega 2 — Contas a pagar e receber. Ainda **NÃO AUTORIZADA**. Somente iniciar após a autorização explícita "Pode implementar a próxima entrega" e nova leitura deste documento/estado do Git. Não interpretar "feito", "testei" ou "funcionou" como autorização.
+
+### Atualização de autorização — 28/10/2026
+
+O usuário autorizou expressamente **"Sim, implementar a Entrega 2"**. O Git estava
+limpo na abertura desta etapa. Essa autorização substitui o bloqueio de início da
+Entrega 2 no registro histórico acima, sem registrar aprovação automática das
+entregas anteriores. Implementar somente a Entrega 2; Entregas 3–6 continuam não
+autorizadas. Acompanhamento detalhado: [FINANCEIRO_ENTREGA_2.md](FINANCEIRO_ENTREGA_2.md).
 
 ## Entrega independente — Gráficos financeiros personalizáveis
 
@@ -189,3 +197,20 @@ Validação desta entrega independente: 76 testes backend, 65 testes frontend e
 20 verificações HTTP reais passaram; builds concluídos. E2E de navegador não
 executou interações por falta de bibliotecas do Chromium. V4 foi validada apenas
 em banco descartável. Sem commit, deploy ou aprovação automática do usuário.
+
+## Estado atual — Entrega 2
+
+**AGUARDANDO TESTES DO USUÁRIO**. Implementadas contas a pagar/receber, vencimentos,
+liquidações parciais, parcelamento e recorrências mensais finitas com histórico.
+V5 validada somente em PostgreSQL descartável. Resultado final: **103 testes
+backend**, **85 testes frontend** e **44 verificações HTTP reais** passaram;
+builds concluídos. Não houve atualização dos serviços existentes, leitura de
+arquivos de ambiente, instalação de dependências ou comandos Git de escrita.
+E2E/validação visual continuam pendentes por bibliotecas do Chromium ausentes.
+
+Detalhes, arquivos, endpoints e roteiro: [FINANCEIRO_ENTREGA_2.md](FINANCEIRO_ENTREGA_2.md).
+Sugestão de commit: `feat: implementar contas a pagar e receber`.
+
+Próxima entrega autorizável: **Entrega 3 — Integração com orçamentos e serviços**,
+**NÃO AUTORIZADA**. Aguardar testes e commit manual do usuário. Só iniciar com
+autorização explícita para a próxima entrega, após reler este arquivo e o Git.

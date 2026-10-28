@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { api, errorMessage } from '../api';
-import { today } from '../money';
+import { money, scaled, today } from '../money';
 import { Field, Modal, useNotify } from '../components/ui';
-import { accountSchema, entrySchema, transferSchema, moneyInput, type EntryFormInput, type AccountFormInput, type TransferFormInput } from './schemas';
+import { accountSchema, entrySchema, transferSchema, moneyInput, validAmount, type EntryFormInput, type AccountFormInput, type TransferFormInput } from './schemas';
 import type { FinanceAccount, FinanceCategory, FinanceEntry, FinanceKind } from './types';
 import { kindLabels, useRefreshFinance } from './shared';
 
@@ -24,7 +24,7 @@ export function EntryForm({kind,entry,accounts,categories,onClose}:{kind:Finance
       try {
         const body={requestId,kind:values.kind,description:values.description,amount:moneyInput(values.amount),
           accountId:Number(values.accountId),categoryId:values.kind==='RETIRADA'?null:Number(values.categoryId),
-          settled:values.state==='LIQUIDADO',entryDate:values.entryDate,
+          settled:values.state==='LIQUIDADO',entryDate:values.entryDate,dueDate:entry?.dueDate??null,
           settlementDate:values.state==='LIQUIDADO'?values.settlementDate:null,notes:values.notes,version:entry?.version};
         if(entry) await api.put(`/finance/entries/${entry.id}`,body); else await api.post('/finance/entries',body);
         await refresh();notify(entry?'Lançamento atualizado.':'Lançamento registrado.');onClose();
@@ -44,7 +44,7 @@ export function EntryForm({kind,entry,accounts,categories,onClose}:{kind:Finance
         <Field label="Observações" error={errors.notes?.message}><textarea rows={3} {...register('notes')}/></Field>
       </details>
       {settled&&<Field label="Data efetiva do recebimento ou pagamento" error={errors.settlementDate?.message}><input type="date" min={selectedAccount?.openingDate} max={today()} {...register('settlementDate')}/></Field>}
-      {entry?.status==='LIQUIDADO'&&<p className="finance-note">A edição estorna o movimento anterior e registra os novos valores, preservando o histórico.</p>}
+      {entry?.status==='LIQUIDADO'&&<p className="finance-note">A edição estorna as liquidações anteriores e registra os novos valores, preservando o histórico.</p>}
       {errors.root&&<p className="form-error" role="alert">{errors.root.message}</p>}
       <div className="actions"><button type="button" className="btn secondary" onClick={onClose} disabled={isSubmitting}>Voltar</button><button className="btn" disabled={isSubmitting}>{isSubmitting?'Salvando…':entry?'Salvar alterações':'Registrar lançamento'}</button></div>
     </form>
@@ -108,14 +108,25 @@ export function CategoryForm({onClose}:{onClose:()=>void}) {
 
 export function SettlementForm({entry,account,onClose}:{entry:FinanceEntry;account:FinanceAccount;onClose:()=>void}) {
   const refresh=useRefreshFinance();const notify=useNotify();const [requestId]=useState(()=>crypto.randomUUID());
-  const {register,handleSubmit,setError,formState:{errors,isSubmitting}}=useForm<{settlementDate:string}>({defaultValues:{settlementDate:today()}});
+  const remaining=entry.remainingAmount??entry.amount, partialAllowed=entry.kind!=='RETIRADA';
+  const {register,handleSubmit,setError,watch,formState:{errors,isSubmitting}}=useForm<{settlementDate:string;amount:string}>({defaultValues:{settlementDate:today(),amount:remaining}});
+  let after:bigint|null=null;
+  try {const value=moneyInput(watch('amount')); const rest=scaled(remaining,2)-scaled(value,2);if(rest>=0n)after=rest;}catch{/* Validation reports invalid input below. */}
   return <Modal title={entry.kind==='RECEITA'?'Registrar recebimento':'Registrar pagamento ou retirada'} onClose={onClose} busy={isSubmitting}>
-    <p className="finance-note">A liquidação integral de “{entry.description}” movimentará a conta {entry.accountName}.</p>
-    <form onSubmit={handleSubmit(async values=>{
-      try{await api.post(`/finance/entries/${entry.id}/settle`,{...values,requestId,version:entry.version});await refresh();notify('Liquidação registrada.');onClose();}
+    <p className="finance-note">“{entry.description}” · Conta {entry.accountName}. {partialAllowed?`Saldo pendente: ${money(remaining)}. Registre o valor integral ou uma parte.`:'A retirada será liquidada integralmente.'}</p>
+    <form noValidate onSubmit={handleSubmit(async values=>{
+      try{await api.post(`/finance/entries/${entry.id}/settle`,{settlementDate:values.settlementDate,...(partialAllowed?{amount:moneyInput(values.amount)}:{}),requestId,version:entry.version});await refresh();notify('Liquidação registrada.');onClose();}
       catch(e){setError('root',{message:errorMessage(e)});void refresh();}
     })}>
-      <Field label="Data efetiva" error={errors.settlementDate?.message}><input type="date" min={account.openingDate} max={today()} {...register('settlementDate',{required:'Informe a data.'})}/></Field>
+      {partialAllowed&&<Field label="Valor da liquidação (R$)" error={errors.amount?.message}><input aria-label="Valor da liquidação (R$)" autoFocus inputMode="decimal" {...register('amount',{validate:value=>{
+        if(!validAmount(value))return 'Informe um valor maior que zero, com até duas casas decimais.';
+        return scaled(moneyInput(value),2)<=scaled(remaining,2)||'O valor não pode superar o saldo pendente.';
+      }})}/></Field>}
+      {partialAllowed&&after!=null&&<p className="finance-note">Saldo pendente após este registro: <strong>{money(after)}</strong>. Somente o valor registrado alterará o saldo da conta.</p>}
+      <Field label="Data efetiva" error={errors.settlementDate?.message}><input type="date" min={account.openingDate} max={today()} {...register('settlementDate',{required:'Informe a data.',validate:value=>{
+        const parsed=new Date(`${value}T12:00:00Z`);
+        return !Number.isNaN(parsed.getTime())&&parsed.toISOString().slice(0,10)===value&&value>=account.openingDate&&value<=today()||'Informe uma data entre a abertura da conta e hoje.';
+      }})}/></Field>
       {errors.root&&<p className="form-error" role="alert">{errors.root.message}</p>}
       <div className="actions"><button className="btn secondary" type="button" onClick={onClose} disabled={isSubmitting}>Voltar</button><button className="btn" disabled={isSubmitting}>{isSubmitting?'Registrando…':'Confirmar liquidação'}</button></div>
     </form>

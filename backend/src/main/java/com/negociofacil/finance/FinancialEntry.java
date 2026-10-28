@@ -15,6 +15,9 @@ public class FinancialEntry extends BaseEntity {
   public String notes;
   @Column(precision = 16, scale = 2) public java.math.BigDecimal amount;
   public java.time.LocalDate entryDate;
+  public Long obligationId;
+  public Integer installmentNumber;
+  public java.time.LocalDate dueDate;
   public java.util.UUID requestId;
   public String requestHash;
   @Version public long version;

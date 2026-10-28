@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.negociofacil.common.*;
 import com.negociofacil.company.CompanyRepository;
 import com.negociofacil.security.CurrentUser;
+import com.negociofacil.finance.obligations.*;
 import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -30,15 +31,18 @@ public class FinanceService {
   private final FinancialAuditRepository audits;
   private final JdbcTemplate jdbc;
   private final ObjectMapper json;
+  private final FinancialObligationRepository obligations;
+  private final FinancialRecurrenceRepository recurrences;
 
   public FinanceService(CompanyRepository companies, FinancialAccountRepository accounts,
       FinancialCategoryRepository categories, FinancialEntryRepository entries,
       FinancialSettlementRepository settlements, BalanceMovementRepository movements,
       FinancialTransferRepository transfers, FinancialAuditRepository audits,
-      JdbcTemplate jdbc, ObjectMapper json) {
+      JdbcTemplate jdbc, ObjectMapper json,FinancialObligationRepository obligations,FinancialRecurrenceRepository recurrences) {
     this.companies=companies; this.accounts=accounts; this.categories=categories;
     this.entries=entries; this.settlements=settlements; this.movements=movements;
     this.transfers=transfers; this.audits=audits; this.jdbc=jdbc; this.json=json;
+    this.obligations=obligations;this.recurrences=recurrences;
   }
 
   private Long company() { return CurrentUser.companyId(); }
@@ -72,10 +76,43 @@ public class FinanceService {
     var a=account(e.accountId);
     var category=e.categoryId==null ? null : categories.findByIdAndCompanyId(e.categoryId,company())
         .orElseThrow(ApiException::missing);
-    var settlement=settlements.findByCompanyIdAndEntryIdAndReversedAtIsNull(company(),e.id).orElse(null);
+    var history=settlements.findByCompanyIdAndEntryIdOrderById(company(),e.id);
+    var active=history.stream().filter(s->s.reversedAt==null).toList();var settlement=active.isEmpty()?null:active.getLast();
+    var parent=e.obligationId==null?null:obligations.findByIdAndCompanyId(e.obligationId,company()).orElseThrow(ApiException::missing);
+    BigDecimal paid=active.stream().map(s->s.amount).reduce(new BigDecimal("0.00"),BigDecimal::add);
+    BigDecimal remaining=e.status==Status.CANCELADO?new BigDecimal("0.00"):e.amount.subtract(paid);
+    boolean overdue=e.status!=Status.CANCELADO && remaining.signum()>0 && e.dueDate!=null && e.dueDate.isBefore(FinanceRules.today());
+    PaymentStatus paymentStatus=e.status==Status.CANCELADO?PaymentStatus.CANCELADO:remaining.signum()==0?PaymentStatus.QUITADO:
+        overdue?PaymentStatus.VENCIDO:paid.signum()>0?PaymentStatus.PARCIAL:PaymentStatus.PENDENTE;
     return new FinanceDtos.EntryView(e.id,e.kind,e.status,a.id,a.name,e.categoryId,
         category==null?null:category.name,e.description,e.amount,e.entryDate,
-        settlement==null?null:settlement.settlementDate,e.notes,e.version,e.createdAt);
+        settlement==null?null:settlement.settlementDate,e.notes,e.version,e.createdAt,
+        e.obligationId,e.installmentNumber,parent==null?null:parent.installmentCount,e.dueDate,paid,remaining,paymentStatus,overdue,
+        parent==null?null:parent.recurrenceId,parent==null?null:parent.occurrenceNumber,
+        parent!=null && !Set.of("QUICK","LEGACY").contains(parent.source),!history.isEmpty());
+  }
+  private List<FinancialSettlement> activeSettlements(FinancialEntry e) {
+    return settlements.findByCompanyIdAndEntryIdAndReversedAtIsNullOrderById(company(),e.id);
+  }
+  private BigDecimal paid(FinancialEntry e) {
+    return activeSettlements(e).stream().map(s->s.amount).reduce(new BigDecimal("0.00"),BigDecimal::add);
+  }
+  private void refreshStatus(FinancialEntry e) {
+    var amount=paid(e);e.status=amount.signum()==0?Status.PENDENTE:amount.compareTo(e.amount)==0?Status.LIQUIDADO:Status.PARCIAL;
+    e.updatedAt=Instant.now();entries.flush();
+  }
+  private void touchParent(FinancialEntry e,BigDecimal beforeAmount,String action,Object before,Object after) {
+    if(e.obligationId==null)return;
+    var p=obligations.findByIdAndCompanyId(e.obligationId,company()).orElseThrow(ApiException::missing);
+    p.totalAmount=p.totalAmount.subtract(beforeAmount).add(e.amount);
+    if(p.totalAmount.precision()-p.totalAmount.scale()>14)throw new ApiException(400,"O total da obrigação ultrapassa o limite monetário.");
+    if(p.installmentCount==1)p.description=e.description;
+    p.updatedAt=Instant.now();obligations.flush();
+    audit("OBRIGACAO",p.id,action,before,after);
+    if(p.recurrenceId!=null) {
+      var recurrence=recurrences.findByIdAndCompanyId(p.recurrenceId,company()).orElseThrow(ApiException::missing);
+      recurrence.updatedAt=Instant.now();recurrences.flush();
+    }
   }
   private FinanceDtos.TransferView transferView(FinancialTransfer t) {
     return new FinanceDtos.TransferView(t.id,t.sourceAccountId,t.targetAccountId,t.amount,
@@ -87,8 +124,17 @@ public class FinanceService {
   }
   private String hash(Object value) {
     try {
+      // Keep idempotency compatible with V4 payloads when callers omit the new
+      // optional fields. ObjectNode retains the original record field order and
+      // the application's monetary/date serialization used by the old hashes.
+      Object canonical=value;
+      if(value instanceof FinanceDtos.EntryInput input && input.dueDate()==null) {
+        com.fasterxml.jackson.databind.node.ObjectNode tree=json.valueToTree(value);tree.remove("dueDate");canonical=tree;
+      } else if(value instanceof FinanceDtos.SettlementInput input && input.amount()==null) {
+        com.fasterxml.jackson.databind.node.ObjectNode tree=json.valueToTree(value);tree.remove("amount");canonical=tree;
+      }
       return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-          .digest(serialize(value).getBytes(StandardCharsets.UTF_8)));
+          .digest(serialize(canonical).getBytes(StandardCharsets.UTF_8)));
     } catch(NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
   }
   private void sameRequest(String expected, String actual) {
@@ -123,7 +169,7 @@ public class FinanceService {
       throw new ApiException(409,"O saldo inicial e sua data não podem mudar após movimentações. Use lançamentos de ajuste.");
     BigDecimal proposedBalance=balance(a).subtract(a.openingBalance).add(input.openingBalance());
     if (!input.active() && (proposedBalance.signum()!=0
-        || entries.existsByCompanyIdAndAccountIdAndStatus(company(),id,Status.PENDENTE)))
+        || entries.existsByCompanyIdAndAccountIdAndStatusIn(company(),id,List.of(Status.PENDENTE,Status.PARCIAL))))
       throw new ApiException(409,"A conta deve ter saldo zero e nenhum lançamento pendente para ser desativada.");
     applyAccount(a,input); accounts.flush();
     var result=accountView(a); audit("CONTA",id,"EDICAO",before,result); return result;
@@ -193,29 +239,56 @@ public class FinanceService {
     validateSettlementInput(input,a);
     var e=new FinancialEntry(); e.companyId=company(); e.kind=input.kind();
     e.requestId=input.requestId(); e.requestHash=hash; applyEntry(e,input,a.id);
+    if(e.kind!=Kind.RETIRADA) {
+      if(obligations.findByCompanyIdAndRequestId(company(),input.requestId()).isPresent())
+        throw new ApiException(409,"Identificador já utilizado em outra obrigação.");
+      var p=new FinancialObligation();p.companyId=company();p.kind=e.kind;p.description=e.description;p.totalAmount=e.amount;
+      p.installmentCount=1;p.source="QUICK";p.requestId=input.requestId();p.requestHash=hash;
+      obligations.saveAndFlush(p);e.obligationId=p.id;e.installmentNumber=1;
+    }
     entries.saveAndFlush(e);
-    if(input.settled()) settle(e,input.settlementDate()==null?FinanceRules.today():input.settlementDate(),UUID.randomUUID(),"CRIACAO");
-    entries.flush(); var result=entryView(e); audit("LANCAMENTO",e.id,"CRIACAO",null,result); return result;
+    if(input.settled()) settle(e,e.amount,input.settlementDate()==null?FinanceRules.today():input.settlementDate(),UUID.randomUUID(),"CRIACAO");
+    entries.flush(); var result=entryView(e); audit("LANCAMENTO",e.id,"CRIACAO",null,result);
+    if(e.obligationId!=null)audit("OBRIGACAO",e.obligationId,"CRIACAO",null,result);
+    return result;
   }
   private void validateSettlementInput(FinanceDtos.EntryInput input,FinancialAccount account) {
     if(input.settled()) FinanceRules.effectiveDate(input.settlementDate()==null?FinanceRules.today():input.settlementDate(),account.openingDate);
     else if(input.settlementDate()!=null) throw new ApiException(400,"Lançamento pendente não tem data de liquidação.");
   }
   private void applyEntry(FinancialEntry e,FinanceDtos.EntryInput input,Long accountId) {
+    ObligationRules.date(input.entryDate());ObligationRules.date(input.dueDate());
     e.accountId=accountId; e.categoryId=input.categoryId(); e.description=input.description().trim();
     e.amount=input.amount().setScale(2); e.entryDate=input.entryDate()==null?FinanceRules.today():input.entryDate();
     e.notes=input.notes(); e.status=input.settled()?Status.LIQUIDADO:Status.PENDENTE;
+    e.dueDate=input.dueDate();
   }
   public FinanceDtos.EntryView updateEntry(Long id,FinanceDtos.EntryInput input) {
     lockCompany(); var e=entry(id); FinanceRules.version(input.version(),e.version);
     if(e.status==Status.CANCELADO) throw new ApiException(409,"Lançamento cancelado não pode ser editado.");
     if(e.kind!=input.kind()) throw new ApiException(400,"A natureza do lançamento não pode ser alterada.");
+    var parent=e.obligationId==null?null:obligations.findByIdAndCompanyId(e.obligationId,company()).orElseThrow(ApiException::missing);
+    if(parent!=null && (parent.installmentCount>1 || parent.recurrenceId!=null))
+      throw new ApiException(409,"Edite esta parcela em Contas a pagar ou Contas a receber.");
     var a=activeAccount(input.accountId()); validateCategory(input.kind(),input.categoryId()); validateSettlementInput(input,a);
-    var before=entryView(e);
+    var before=entryView(e);var beforeAmount=e.amount;
+    boolean legacyFullEdit=e.status==Status.LIQUIDADO && (parent==null || Set.of("QUICK","LEGACY").contains(parent.source));
+    boolean preservePayments=before.hasSettlementHistory() && !legacyFullEdit;
+    if(preservePayments) {
+      if(e.amount.compareTo(input.amount())!=0 || !e.accountId.equals(a.id) || !Objects.equals(e.categoryId,input.categoryId())
+          || input.settled()!=(e.status==Status.LIQUIDADO)
+          || (input.settlementDate()!=null && !Objects.equals(input.settlementDate(),before.settlementDate())))
+        throw new ApiException(409,"Um lançamento com pagamentos preserva valor, conta, categoria e liquidações. Use as ações de pagamento ou estorno.");
+      ObligationRules.date(input.entryDate());ObligationRules.date(input.dueDate());
+      e.description=input.description().trim();e.notes=input.notes();e.entryDate=input.entryDate()==null?FinanceRules.today():input.entryDate();e.dueDate=input.dueDate();
+      e.updatedAt=Instant.now();entries.flush();var result=entryView(e);audit("LANCAMENTO",id,"EDICAO",before,result);
+      touchParent(e,beforeAmount,"EDICAO_PARCELA",before,result);return result;
+    }
     reverseSettlement(e,"Estorno por edição");
     applyEntry(e,input,a.id);
-    if(input.settled()) settle(e,input.settlementDate()==null?FinanceRules.today():input.settlementDate(),UUID.randomUUID(),"EDICAO");
-    e.updatedAt=Instant.now(); entries.flush(); var result=entryView(e); audit("LANCAMENTO",id,"EDICAO",before,result); return result;
+    if(input.settled()) settle(e,e.amount,input.settlementDate()==null?FinanceRules.today():input.settlementDate(),UUID.randomUUID(),"EDICAO");
+    e.updatedAt=Instant.now(); entries.flush(); var result=entryView(e); audit("LANCAMENTO",id,"EDICAO",before,result);
+    touchParent(e,beforeAmount,"EDICAO_PARCELA",before,result);return result;
   }
   public FinanceDtos.EntryView settleEntry(Long id,FinanceDtos.SettlementInput input) {
     lockCompany(); var e=entry(id); String hash=hash(input);
@@ -225,18 +298,22 @@ public class FinanceService {
       sameRequest(previous.requestHash,hash); return entryView(e);
     }
     FinanceRules.version(input.version(),e.version);
-    if(e.status!=Status.PENDENTE) throw new ApiException(409,"Este lançamento não está pendente.");
+    if(e.status!=Status.PENDENTE && e.status!=Status.PARCIAL) throw new ApiException(409,"Este lançamento não tem saldo pendente.");
     FinanceRules.effectiveDate(input.settlementDate(),activeAccount(e.accountId).openingDate);
-    var before=entryView(e); settle(e,input.settlementDate(),input.requestId(),hash);
-    e.status=Status.LIQUIDADO; entries.flush();
-    var result=entryView(e); audit("LANCAMENTO",id,"LIQUIDACAO",before,result); return result;
+    BigDecimal remaining=e.amount.subtract(paid(e)),amount=input.amount()==null?remaining:input.amount().setScale(2);
+    if(amount.signum()<=0 || amount.compareTo(remaining)>0)throw new ApiException(400,"O pagamento deve ser positivo e não pode ultrapassar o saldo pendente.");
+    if(e.kind==Kind.RETIRADA && amount.compareTo(remaining)!=0)
+      throw new ApiException(400,"Retiradas pessoais devem ser liquidadas integralmente. Pagamentos parciais estão disponíveis para contas a pagar e receber.");
+    var before=entryView(e); settle(e,amount,input.settlementDate(),input.requestId(),hash);refreshStatus(e);
+    var result=entryView(e); audit("LANCAMENTO",id,"LIQUIDACAO",before,result);
+    touchParent(e,e.amount,"LIQUIDACAO",before,result);return result;
   }
-  private void settle(FinancialEntry e,LocalDate date,UUID key,String hash) {
+  private void settle(FinancialEntry e,BigDecimal amount,LocalDate date,UUID key,String hash) {
     var s=new FinancialSettlement(); s.companyId=company(); s.entryId=e.id; s.accountId=e.accountId;
-    s.amount=e.amount; s.settlementDate=date; s.requestId=key; s.requestHash=hash;
+    s.amount=amount; s.settlementDate=date; s.requestId=key; s.requestHash=hash;
     settlements.saveAndFlush(s);
     var m=new BalanceMovement(); m.companyId=company(); m.accountId=e.accountId; m.settlementId=s.id;
-    m.kind=FinanceRules.movementKind(e.kind); m.amount=FinanceRules.signed(e.kind,e.amount);
+    m.kind=FinanceRules.movementKind(e.kind); m.amount=FinanceRules.signed(e.kind,amount);
     m.effectiveDate=date; m.description=e.description; movements.saveAndFlush(m);
   }
   private void reverseMovement(BalanceMovement original,String reason) {
@@ -247,17 +324,34 @@ public class FinanceService {
     movements.saveAndFlush(m);
   }
   private void reverseSettlement(FinancialEntry e,String reason) {
-    var s=settlements.findByCompanyIdAndEntryIdAndReversedAtIsNull(company(),e.id).orElse(null);
-    if(s==null) return;
+    for(var s:activeSettlements(e))reverseOneSettlement(s,reason);
+  }
+  private void reverseOneSettlement(FinancialSettlement s,String reason) {
     var original=movements.findByCompanyIdAndSettlementId(company(),s.id).orElseThrow(ApiException::missing);
     reverseMovement(original,reason); s.reversedAt=Instant.now(); settlements.flush();
+  }
+  @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+  public List<FinanceDtos.SettlementView> settlements(Long id) {
+    entry(id);
+    return settlements.findByCompanyIdAndEntryIdOrderById(company(),id).stream()
+        .map(s->new FinanceDtos.SettlementView(s.id,s.amount,s.settlementDate,s.reversedAt,s.createdAt)).toList();
+  }
+  public FinanceDtos.EntryView reverseSettlement(Long id,Long settlementId,FinanceDtos.ReverseSettlementInput input) {
+    lockCompany();var e=entry(id);var s=settlements.findByIdAndCompanyIdAndEntryId(settlementId,company(),id).orElseThrow(ApiException::missing);
+    if(e.status==Status.CANCELADO)throw new ApiException(409,"Lançamento cancelado não admite alterações de pagamentos.");
+    if(s.reversedAt!=null)return entryView(e);
+    FinanceRules.version(input.version(),e.version);var before=entryView(e);
+    reverseOneSettlement(s,"Estorno individual");refreshStatus(e);var result=entryView(e);
+    var details=new LinkedHashMap<String,Object>();details.put("reason",input.reason().trim());details.put("settlementId",s.id);details.put("entry",result);
+    audit("LANCAMENTO",id,"ESTORNO_LIQUIDACAO",before,details);touchParent(e,e.amount,"ESTORNO_LIQUIDACAO",before,details);return result;
   }
   public FinanceDtos.EntryView cancelEntry(Long id,FinanceDtos.VersionInput input) {
     lockCompany(); var e=entry(id);
     if(e.status==Status.CANCELADO) return entryView(e);
     FinanceRules.version(input.version(),e.version); var before=entryView(e);
     reverseSettlement(e,"Estorno por cancelamento"); e.status=Status.CANCELADO; entries.flush();
-    var result=entryView(e); audit("LANCAMENTO",id,"CANCELAMENTO",before,result); return result;
+    var result=entryView(e); audit("LANCAMENTO",id,"CANCELAMENTO",before,result);
+    touchParent(e,e.amount,"CANCELAMENTO_PARCELA",before,result);return result;
   }
 
   public FinanceDtos.TransferView transfer(FinanceDtos.TransferInput input) {
@@ -334,6 +428,8 @@ public class FinanceService {
       case "CONTA" -> account(id);
       case "LANCAMENTO" -> entry(id);
       case "TRANSFERENCIA" -> transfers.findByIdAndCompanyId(id,company()).orElseThrow(ApiException::missing);
+      case "OBRIGACAO" -> obligations.findByIdAndCompanyId(id,company()).orElseThrow(ApiException::missing);
+      case "RECORRENCIA" -> recurrences.findByIdAndCompanyId(id,company()).orElseThrow(ApiException::missing);
       default -> throw new ApiException(400,"Recurso de histórico inválido.");
     }
     return audits.findByCompanyIdAndResourceAndResourceIdOrderById(company(),resource,id).stream()
