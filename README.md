@@ -21,6 +21,7 @@ docs/               Decisões, segurança e relatório de validação
 - Link público com token aleatório de 256 bits, aceite ou recusa com confirmação, vencimento e resposta definitiva. Dados privados não são expostos.
 - Compartilhamento pelo WhatsApp via `wa.me`, dashboard atualizado e configurações da empresa.
 - Temas claro e escuro com alternância no topo, preferência salva no navegador e tema inicial do sistema.
+- Financeiro com contas, movimentações e painel de gráficos personalizáveis por usuário. Consulte [a documentação dos gráficos](docs/GRAFICOS_FINANCEIROS.md) para métricas suportadas e validação.
 - Interface em português, layout responsivo, estados vazios, carregamento, erros e diálogos nativos acessíveis por teclado.
 
 ## Execução com Docker

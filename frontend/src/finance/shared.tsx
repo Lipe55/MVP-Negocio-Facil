@@ -19,6 +19,7 @@ export function useRefreshFinance() {
 export function FinanceTabs() {
   return <nav className="finance-tabs" aria-label="Seções do financeiro">
     <NavLink to="/financeiro/movimentacoes">Movimentações</NavLink>
+    <NavLink to="/financeiro/graficos">Gráficos</NavLink>
     <NavLink to="/financeiro/contas">Contas e saldos</NavLink>
   </nav>;
 }

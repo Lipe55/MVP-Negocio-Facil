@@ -12,6 +12,7 @@ import PublicQuote from "./pages/PublicQuote";
 import Settings from "./pages/Settings";
 import FinanceMovements from "./finance/Movements";
 import FinanceAccounts from "./finance/Accounts";
+import FinanceCharts from "./finance/charts/Charts";
 export default function App() {
   return (
     <Notifications>
@@ -30,6 +31,7 @@ export default function App() {
               <Route path="/orcamentos/:id" element={<QuoteDetail />} />
               <Route path="/financeiro" element={<Navigate to="/financeiro/movimentacoes" replace />} />
               <Route path="/financeiro/movimentacoes" element={<FinanceMovements />} />
+              <Route path="/financeiro/graficos" element={<FinanceCharts />} />
               <Route path="/financeiro/contas" element={<FinanceAccounts />} />
               <Route path="/configuracoes" element={<Settings />} />
             </Route>

@@ -175,3 +175,17 @@ Use uma empresa de teste no ambiente de desenvolvimento, com backend e frontend 
 Entrega 1: **AGUARDANDO TESTES DO USUÁRIO**. Não aprovada automaticamente. Sugestão de commit: `feat(finance): implementar fundação financeira`.
 
 Próxima entrega autorizável: Entrega 2 — Contas a pagar e receber. Ainda **NÃO AUTORIZADA**. Somente iniciar após a autorização explícita "Pode implementar a próxima entrega" e nova leitura deste documento/estado do Git. Não interpretar "feito", "testei" ou "funcionou" como autorização.
+
+## Entrega independente — Gráficos financeiros personalizáveis
+
+Autorização específica posterior para uma aba **Gráficos**, entre Movimentações e
+Contas e saldos, com construtor e preferências persistentes por usuário/empresa.
+Estado: **AGUARDANDO TESTES DO USUÁRIO**. A autorização desta funcionalidade não modifica os
+estados das seis entregas acima e não autoriza as outras funcionalidades da
+Entrega 4. Detalhes, métricas suportadas, limitações, endpoints e verificações:
+[GRAFICOS_FINANCEIROS.md](GRAFICOS_FINANCEIROS.md).
+
+Validação desta entrega independente: 76 testes backend, 65 testes frontend e
+20 verificações HTTP reais passaram; builds concluídos. E2E de navegador não
+executou interações por falta de bibliotecas do Chromium. V4 foi validada apenas
+em banco descartável. Sem commit, deploy ou aprovação automática do usuário.
