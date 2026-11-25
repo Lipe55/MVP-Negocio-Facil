@@ -29,13 +29,13 @@ docs/               Decisões, segurança e relatório de validação
 
 Requisitos: Docker Engine e Docker Compose v2.24 ou superior.
 
+Crie um arquivo local `.env` com `DATABASE_PASSWORD` definido para uma senha forte. O usuário e o banco padrão são `negocio_facil`.
+
 ```bash
-cp .env.example .env
-# Edite .env e substitua DATABASE_PASSWORD por uma senha forte.
 docker compose up --build -d --wait
 ```
 
-Abra `http://localhost:5173` **na sua máquina local**. A API fica acessível em `/api` pelo mesmo frontend. As migrations Flyway rodam automaticamente antes da inicialização da API. O banco usa volume persistente; `docker compose down` preserva os dados. `docker compose down -v` apaga os dados e só deve ser usado conscientemente.
+Abra `http://localhost:5173` ou `http://127.0.0.1:5173` **na sua máquina local**. A API fica acessível em `/api` pelo mesmo frontend. As migrations Flyway rodam automaticamente antes da inicialização da API. O banco usa volume persistente; `docker compose down` preserva os dados. `docker compose down -v` apaga os dados e só deve ser usado conscientemente.
 
 O frontend no Docker serve um build estático: editar `frontend/src` não atualiza automaticamente o container. Para incorporar as alterações à imagem, reconstrua e recrie somente o frontend, sem suas dependências: `docker compose up --build --no-deps -d frontend`. Depois, recarregue o navegador. Para recarga automática durante edição, use o desenvolvimento com Vite descrito abaixo.
 
@@ -52,8 +52,7 @@ O Compose mantém o frontend e o PostgreSQL ligados à interface de loopback do 
 Requisitos: **JDK** 21 (não apenas JRE), Maven 3.9+, Node 22.12+ ou 24+, npm e Docker.
 
 ```bash
-cp .env.example .env
-# Configure a senha no arquivo antes de continuar.
+# Use o .env local criado na seção acima.
 set -a
 . ./.env
 set +a
@@ -157,3 +156,7 @@ Veja [resultados e limitações dos testes](docs/validation.md). A aplicação f
 Prioridades sugeridas: exportação de propostas em PDF, convites e permissões por colaborador, histórico de versões, CRM e acompanhamento comercial. Ordens de serviço, agendamento e pagamentos podem ser adicionados em domínios separados, mantendo o isolamento por empresa. Não há cobrança de assinatura neste MVP.
 
 Veja [correções de segurança e validação pendente](docs/security-fixes.md) antes de atualizar uma instância existente.
+
+## Fiscal
+
+O menu **Fiscal** importa XML da NFS-e nacional, consulta notas, vincula registros existentes e gera o DANFSe usando o serviço oficial em rede privada. Veja o [guia do módulo fiscal](docs/FISCAL_V1.md) para o leiaute aceito, configuração e testes.
