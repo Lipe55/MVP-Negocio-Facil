@@ -7,6 +7,7 @@ import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
@@ -42,6 +43,29 @@ public class Errors {
   })
   ResponseEntity<ErrorBody> malformed(Exception e) {
     return response(400, "Requisição inválida.", Map.of());
+  }
+
+  @ExceptionHandler(org.springframework.validation.BindException.class)
+  ResponseEntity<ErrorBody> binding(Exception e) {
+    return response(400, "Confira os filtros informados.", Map.of());
+  }
+
+  @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+  ResponseEntity<ErrorBody> uploadTooLarge(Exception e) {
+    return response(413, "O XML deve ter até 1 MiB.", Map.of());
+  }
+
+  @ExceptionHandler({
+    MissingServletRequestParameterException.class,
+    org.springframework.web.multipart.support.MissingServletRequestPartException.class
+  })
+  ResponseEntity<ErrorBody> missingParameter(Exception e) {
+    return response(400, "Preencha os campos obrigatórios.", Map.of());
+  }
+
+  @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+  ResponseEntity<ErrorBody> unsupportedMedia(Exception e) {
+    return response(415, "Formato de envio não suportado.", Map.of());
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)

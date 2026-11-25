@@ -5,6 +5,7 @@ import {
   Wallet,
   Users,
   FileText,
+  ReceiptText,
   Settings,
   Menu,
   LogOut,
@@ -23,6 +24,7 @@ const navigation = [
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/orcamentos", label: "Orçamentos", icon: FileText },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
+  { to: "/fiscal", label: "Fiscal", icon: ReceiptText },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 export default function Layout() {

@@ -21,17 +21,34 @@ services:
       DATABASE_USER: ${DATABASE_USER:-negocio_facil}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD in .env}
       APP_ORIGIN: ${APP_ORIGIN:-http://localhost:5173}
+      DANFSE_URL: ${DANFSE_URL:-http://danfse:8080}
+      DANFSE_TIMEOUT: ${DANFSE_TIMEOUT:-8s}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
     depends_on:
       db:
         condition: service_healthy
+    networks: [default, fiscal]
     expose: ["8080"]
     healthcheck:
       test: ["CMD", "java", "-cp", "/app/health", "com.negociofacil.config.HealthProbe"]
       interval: 5s
       timeout: 5s
       retries: 30
+  danfse:
+    build: ./danfse
+    networks: [fiscal]
+    environment:
+      XML_MAX_SIZE_BYTES: "1048576"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health/ready"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
   frontend:
     build: ./frontend
     ports:
@@ -41,3 +58,6 @@ services:
         condition: service_healthy
 volumes:
   postgres_data:
+networks:
+  fiscal:
+    internal: true

@@ -36,8 +36,14 @@ public class SecurityConfig {
       JdbcTemplate jdbc)
       throws Exception {
     var cors = new CorsConfiguration();
-    cors.setAllowedOrigins(List.of(origin));
-    cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    var allowedOrigins = new java.util.ArrayList<>(List.of(origin));
+    if (origin.equals("http://localhost:5173")) {
+      allowedOrigins.add("http://127.0.0.1:5173");
+    } else if (origin.equals("http://127.0.0.1:5173")) {
+      allowedOrigins.add("http://localhost:5173");
+    }
+    cors.setAllowedOrigins(allowedOrigins);
+    cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     cors.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN"));
     cors.setAllowCredentials(true);
     var source = new UrlBasedCorsConfigurationSource();

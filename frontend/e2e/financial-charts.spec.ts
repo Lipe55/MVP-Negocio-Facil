@@ -168,7 +168,7 @@ test('custom charts use real cash, persist, refresh, isolate and work on mobile'
   const expenseForm = page.getByRole('dialog', { name: 'Nova despesa operacional', exact: true });
   await expenseForm.getByLabel('Valor (R$)', { exact: true }).fill('30,00');
   await expenseForm.getByLabel('Descrição', { exact: true }).fill('Nova despesa para atualizar gráfico');
-  await expenseForm.getByLabel('Categoria', { exact: true }).selectOption(String(transport.id));
+  await expenseForm.getByRole('combobox', { name: 'Categoria', exact: true }).selectOption(String(transport.id));
   await expenseForm.getByRole('button', { name: 'Registrar lançamento', exact: true }).click();
   await expect(expenseForm).not.toBeVisible();
   await page.getByRole('link', { name: 'Gráficos', exact: true }).click();

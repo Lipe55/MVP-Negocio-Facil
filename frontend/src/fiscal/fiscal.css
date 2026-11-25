@@ -1,0 +1,59 @@
+.fiscal-page, .fiscal-picker {
+  display: grid;
+  gap: .75rem;
+}
+
+.fiscal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .75rem;
+  min-width: 0;
+}
+
+fieldset.fiscal-toolbar {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.fiscal-toolbar .field, .fiscal-picker {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fiscal-toolbar .field input[type="file"] {
+  max-width: 100%;
+}
+
+.fiscal-stats, .fiscal-data {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: .75rem;
+  margin: 0;
+}
+
+.fiscal-stats dd, .fiscal-data dd {
+  margin: .25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.fiscal-stats dd {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.fiscal-description {
+  min-width: 12rem;
+  overflow-wrap: anywhere;
+}
+
+.fiscal-page .table-wrap { overflow-x: auto; }
+
+.fiscal-page > .panel, .fiscal-stats > .panel {
+  margin-bottom: 0;
+}
+
+.panel.fiscal-toolbar, .panel.fiscal-data, .panel.fiscal-page, .fiscal-stats > .panel {
+  padding: 1rem;
+}

@@ -14,6 +14,7 @@ import FinanceMovements from "./finance/Movements";
 import FinanceAccounts from "./finance/Accounts";
 import FinanceCharts from "./finance/charts/Charts";
 import FinanceObligations from "./finance/obligations/Obligations";
+import Fiscal, { FiscalDetail } from "./fiscal/Fiscal";
 export default function App() {
   return (
     <Notifications>
@@ -36,6 +37,8 @@ export default function App() {
               <Route path="/financeiro/contas" element={<FinanceAccounts />} />
               <Route path="/financeiro/receber" element={<FinanceObligations key="receber" kind="RECEITA" />} />
               <Route path="/financeiro/pagar" element={<FinanceObligations key="pagar" kind="DESPESA" />} />
+              <Route path="/fiscal" element={<Fiscal />} />
+              <Route path="/fiscal/:id" element={<FiscalDetail />} />
               <Route path="/configuracoes" element={<Settings />} />
             </Route>
           </Route>

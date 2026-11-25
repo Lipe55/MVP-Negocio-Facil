@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 1MB
+      max-request-size: 1100KB
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/negocio_facil}
     username: ${DATABASE_USER:negocio_facil}
@@ -32,3 +36,7 @@ server:
         secure: ${COOKIE_SECURE:false}
 app:
   allowed-origin: ${APP_ORIGIN:http://localhost:5173}
+fiscal:
+  danfse:
+    url: ${DANFSE_URL:http://localhost:8081}
+    timeout: ${DANFSE_TIMEOUT:8s}
